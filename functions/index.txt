@@ -1,0 +1,46 @@
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+admin.initializeApp();
+const firestore = admin.firestore();
+
+//Function to create specific UIDs
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// First function is meant to write something in the database
+exports.writeNewData = functions.https.onRequest(async (request, response) => {
+  const writeResult = await firestore.collection('emulatorTest').add({UUID: uuidv4()});
+  // Send back a message that we've succesfully written the message
+  response.json({result: `Message with ID: ${writeResult.id} added.`});
+});
+
+// Second function is meant to read the collection
+exports.readData = functions.https.onRequest((request, response) => {
+  const collectionReference = firestore.collection('emulatorTest');
+  var result = '';
+  var allData = collectionReference.get()
+    .then(snapshot => {
+      snapshot.forEach(doc => {
+        result = result + ' \n ' + doc.id + '=>' + doc.data()
+        console.log(doc.id, '=>', doc.data());
+      });
+      response.json(result);
+    })
+    .catch(err => {
+      console.log('Error getting documents', err);
+      response.json(err);
+    });
+});
+
+//Third function is to check the emulator trigger
+exports.onWriteData = functions.firestore
+  .document('emulatorTest/{docId}')
+  .onWrite((change, context) => {
+    console.log("it's working")
+    console.log(JSON.stringify(change.after.data()));
+    return ({"response": change.after.data() });
+});
