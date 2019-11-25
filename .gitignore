@@ -66,3 +66,4 @@ node_modules/
 
 # credentials
 repro-cases-9f430d9e8792.json
+.DS_Store
